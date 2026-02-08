@@ -11,6 +11,8 @@ from Crypto.Util.Padding import pad, unpad
 AesIV = b"Nq4G3pTQFLTCeiB7"
 AesKey = b"yrhWj8EiU83kXupm"
 
+KNOWN_ITEM_IDS = json.load(open("data/known_item_ids.json"))
+
 def decrypt(data):
     cipher = AES.new(AesKey, AES.MODE_CBC, AesIV)
     return unpad(cipher.decrypt(data), AES.block_size)
@@ -27,7 +29,7 @@ def extract_record(record):
     }
     return save_dict
 
-def encrypt_save_dict(save_dict):    
+def encrypt_save_dict(save_dict):
     save_string = json.dumps({
         "keys": list(save_dict.keys()),
         "values": list(save_dict.values()),
@@ -46,22 +48,33 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("root_json_path", type=str)
     parser.add_argument(
-        "--add-money", nargs="?", type=int, const=1_000_000)
+        "--add-money", nargs="?", type=int, const=1_000_000, metavar="AMOUNT",
+        help="Add specified amount of money (default: 1,000,000).")
     parser.add_argument(
-        "--print-save", action="store_true")
+        "--print-save", action="store_true",
+        help="Print all extracted information from save to command line.")
     parser.add_argument(
-        "--analyze-all", action="store_true", 
+        "--analyze-all", action="store_true",
         help="Analyze all encountered enemies (won't work on unseen ones)")
     parser.add_argument(
-        "--add-box-keys", action="store_true", 
-        help=("Add 25 to a box key type you already own (if you have less than 25). "
+        "--add-box-keys", action="store_true",
+        help=("Add 25 to owned box keys (if you have less than 25). "
              "Note that max num. of boxes per key is 24."))
     parser.add_argument(
         "--add-recovery-items", action="store_true",
-        help="Add 100 "
+        help="Add 100 to owned recovery items (if less than 100)."
     )
-    parser.add_argument("--insert-items", type=str, nargs="+")
-    
+    parser.add_argument(
+        "--add-battle-items", action="store_true",
+        help="Add 60 to owned battle items (if less than 60)."
+    )
+    parser.add_argument(
+        "--insert-items", metavar="ITEM_ID", type=str, nargs="*", default=[],
+        help=("Insert NEW items in quantities of 8."
+              "To avoid game crashing, the program will error if you try to "
+              "insert existing, unknown or key/quest items.")
+    )
+
     args = parser.parse_args()
 
     root_json_path = args.root_json_path
@@ -81,7 +94,7 @@ if __name__ == "__main__":
         game_system_info_str = json.dumps(game_system_info, separators=(",", ":"))
         save_dict["GameSystemInfo"] = game_system_info_str
         edited = True
-    
+
     if args.analyze_all:
         battle_data = json.loads(save_dict["BattleData"])
         for values in battle_data["libraryInfoTable"]["valueList"]:
@@ -89,7 +102,7 @@ if __name__ == "__main__":
         battle_data_str = json.dumps(battle_data, separators=(",", ":"))
         save_dict["BattleData"] = battle_data_str
         edited = True
-    
+
     if args.add_box_keys:
         inventory_data = json.loads(save_dict["Inventory"])
         for value in inventory_data["itemTable"]["valueList"]:
@@ -99,16 +112,45 @@ if __name__ == "__main__":
         inventory_data_str = json.dumps(inventory_data, separators=(",", ":"))
         save_dict["Inventory"] = inventory_data_str
         edited = True
-    
-    if args.add_elixir:
+
+    edit_inventory = (
+        args.add_box_keys or
+        args.add_recovery_items or
+        args.add_battle_items or
+        args.insert_items
+    )
+    if edit_inventory:
+        edited = True
         inventory_data = json.loads(save_dict["Inventory"])
+
+        # process all amount increments
         for value in inventory_data["itemTable"]["valueList"]:
             # value looks like {'count': 1, 'itemId': 'WpSword_Rk01', 'newType': 3}
-            if value["itemId"].startswith("Item_BoxKey_"):
+
+            if (args.add_box_keys and value["itemId"].startswith("Item_BoxKey_")
+                    and value["count"] < 25):
                 value["count"] += 25
+
+            if (args.add_recovery_items and value["itemId"].startswith("Item_Recover_")
+                    and value["count"] < 100):
+                value["count"] += 100
+
+            if (args.add_battle_items and value["itemId"].startswith("Item_Battle_")
+                    and value["count"] < 60):
+                value["count"] += 60
+
+        # process new item insertions
+        for item_id in args.insert_items:
+            # some minimal guardrails to avoid game crashing
+            if item_id not in KNOWN_ITEM_IDS:
+                raise ValueError(f"unknown item id: {item_id}")
+            if item_id.beginswith("Item_Key_") or item_id.beginswith("Item_Quest_"):
+                raise ValueError(f"Cannot insert key/quest item: {item_id}")
+            if item_id in inventory_data["itemTable"]["keyList"]:
+                raise ValueError(f"Item: {item_id} already in inventory!")
+
         inventory_data_str = json.dumps(inventory_data, separators=(",", ":"))
         save_dict["Inventory"] = inventory_data_str
-        edited = True
 
     if args.print_save:
         for k, v in save_dict.items():
