@@ -37,6 +37,23 @@ def encrypt_save_dict(save_dict):
     return base64.b64encode(encrypt(save_string.encode("utf-8"))).decode("utf-8")
 
 
+def insert_item(inventory_data, item_id, skip_existing=False):
+    # some minimal guardrails to avoid game crashing
+    if item_id not in KNOWN_ITEM_IDS:
+        raise ValueError(f"unknown item id: {item_id}")
+    if item_id.startswith("Item_Key_") or item_id.startswith("Item_Quest_"):
+        raise ValueError(f"Cannot insert key/quest item: {item_id}")
+    if item_id in inventory_data["itemTable"]["keyList"]:
+        if skip_existing:
+            return
+        else:
+            raise ValueError(f"Item: {item_id} already in inventory!")
+
+    # newType: 0=unknown, 1=discovery, 2=get, 3=confirm
+    inventory_data["itemTable"]["keyList"].append(item_id)
+    inventory_data["itemTable"]["valueList"].append(
+        {"count": 8, "itemId": item_id, "newType": 2})
+
 def quicktest(record):
     save_dict = extract_record(record)
     encryped_str = encrypt_save_dict(save_dict)
@@ -71,6 +88,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--add-accessories", action="store_true",
         help="Add 8 to owned accessories (if less than 8)."
+    )
+    parser.add_argument(
+        "--insert-all-weapons", action="store_true",
+        help="Add 8 copies of every weapon known in data/knwon_item_ids.json."
+    )
+    parser.add_argument(
+        "--insert-all-armors", action="store_true",
+        help="Add 8 copies of every armor known in data/known_item_ids.json."
     )
     parser.add_argument(
         "--insert-items", metavar="ITEM_ID", type=str, nargs="*", default=[],
@@ -123,6 +148,8 @@ if __name__ == "__main__":
         args.add_recovery_items or
         args.add_battle_items or
         args.add_accessories or
+        args.insert_all_weapons or
+        args.insert_all_armors or
         args.insert_items
     )
     if edit_inventory:
@@ -150,19 +177,18 @@ if __name__ == "__main__":
                 value["count"] += 8
 
         # process new item insertions
-        for item_id in args.insert_items:
-            # some minimal guardrails to avoid game crashing
-            if item_id not in KNOWN_ITEM_IDS:
-                raise ValueError(f"unknown item id: {item_id}")
-            if item_id.startswith("Item_Key_") or item_id.startswith("Item_Quest_"):
-                raise ValueError(f"Cannot insert key/quest item: {item_id}")
-            if item_id in inventory_data["itemTable"]["keyList"]:
-                raise ValueError(f"Item: {item_id} already in inventory!")
+        if args.insert_all_weapons:
+            for item_id in KNOWN_ITEM_IDS:
+                if item_id.startswith("Wp"):
+                    insert_item(inventory_data, item_id, skip_existing=True)
 
-            # newType: 0=unknown, 1=discovery, 2=get, 3=confirm
-            inventory_data["itemTable"]["keyList"].append(item_id)
-            inventory_data["itemTable"]["valueList"].append(
-                {"count": 8, "itemId": item_id, "newType": 2})
+        if args.insert_all_armors:
+            for item_id in KNOWN_ITEM_IDS:
+                if item_id.startswith("ArmorM_") or item_id.startswith("ArmorS_"):
+                    insert_item(inventory_data, item_id, skip_existing=True)
+
+        for item_id in args.insert_items:
+            insert_item(inventory_data, item_id)
 
         inventory_data_str = json.dumps(inventory_data, separators=(",", ":"))
         save_dict["Inventory"] = inventory_data_str
