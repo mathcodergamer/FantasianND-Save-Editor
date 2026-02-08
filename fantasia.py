@@ -153,12 +153,15 @@ if __name__ == "__main__":
             # some minimal guardrails to avoid game crashing
             if item_id not in KNOWN_ITEM_IDS:
                 raise ValueError(f"unknown item id: {item_id}")
-            if item_id.beginswith("Item_Key_") or item_id.beginswith("Item_Quest_"):
+            if item_id.startswith("Item_Key_") or item_id.startswith("Item_Quest_"):
                 raise ValueError(f"Cannot insert key/quest item: {item_id}")
             if item_id in inventory_data["itemTable"]["keyList"]:
                 raise ValueError(f"Item: {item_id} already in inventory!")
 
             # newType: 0=unknown, 1=discovery, 2=get, 3=confirm
+            inventory_data["itemTable"]["keyList"].append(item_id)
+            inventory_data["itemTable"]["valueList"].append(
+                {"count": 8, "itemId": item_id, "newType": 2})
 
         inventory_data_str = json.dumps(inventory_data, separators=(",", ":"))
         save_dict["Inventory"] = inventory_data_str
@@ -175,6 +178,7 @@ if __name__ == "__main__":
             print("\n" * 3)
 
     if edited:
+        print("Finished editing.")
         encrypted_str = encrypt_save_dict(save_dict)
 
         records[-1]["encryptedString"] = encrypted_str
