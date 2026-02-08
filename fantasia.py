@@ -76,7 +76,8 @@ if __name__ == "__main__":
         "--insert-items", metavar="ITEM_ID", type=str, nargs="*", default=[],
         help=("Insert NEW items in quantities of 8."
               "To avoid game crashing, the program will error if you try to "
-              "insert existing, unknown or key/quest items.")
+              "insert existing, unknown or key/quest items.  Look at" \
+              "data/known_item_ids.json for a list of known items in the game.")
     )
 
     args = parser.parse_args()
