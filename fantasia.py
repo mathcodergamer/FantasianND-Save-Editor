@@ -69,6 +69,10 @@ if __name__ == "__main__":
         help="Add 60 to owned battle items (if less than 60)."
     )
     parser.add_argument(
+        "--add-accessories", action="store_true",
+        help="Add 8 to owned accessories (if less than 8)."
+    )
+    parser.add_argument(
         "--insert-items", metavar="ITEM_ID", type=str, nargs="*", default=[],
         help=("Insert NEW items in quantities of 8."
               "To avoid game crashing, the program will error if you try to "
@@ -117,6 +121,7 @@ if __name__ == "__main__":
         args.add_box_keys or
         args.add_recovery_items or
         args.add_battle_items or
+        args.add_accessories or
         args.insert_items
     )
     if edit_inventory:
@@ -139,6 +144,10 @@ if __name__ == "__main__":
                     and value["count"] < 60):
                 value["count"] += 60
 
+            if (args.add_accessories and value["itemId"].startswith("Acce_")
+                    and value["count"] < 8):
+                value["count"] += 8
+
         # process new item insertions
         for item_id in args.insert_items:
             # some minimal guardrails to avoid game crashing
@@ -148,6 +157,8 @@ if __name__ == "__main__":
                 raise ValueError(f"Cannot insert key/quest item: {item_id}")
             if item_id in inventory_data["itemTable"]["keyList"]:
                 raise ValueError(f"Item: {item_id} already in inventory!")
+
+            # newType: 0=unknown, 1=discovery, 2=get, 3=confirm
 
         inventory_data_str = json.dumps(inventory_data, separators=(",", ":"))
         save_dict["Inventory"] = inventory_data_str
