@@ -37,7 +37,9 @@ def encrypt_save_dict(save_dict):
     return base64.b64encode(encrypt(save_string.encode("utf-8"))).decode("utf-8")
 
 
-def insert_item(inventory_data, item_id, skip_existing=False):
+def insert_item(
+        inventory_data, item_id, skip_existing=False, count=8,
+        add_to_existing=False):
     # some minimal guardrails to avoid game crashing
     if item_id not in KNOWN_ITEM_IDS:
         raise ValueError(f"unknown item id: {item_id}")
@@ -46,13 +48,17 @@ def insert_item(inventory_data, item_id, skip_existing=False):
     if item_id in inventory_data["itemTable"]["keyList"]:
         if skip_existing:
             return
+        elif add_to_existing:
+            index = inventory_data["itemTable"]["keyList"].index(item_id)
+            assert inventory_data["itemTable"]["valueList"][index]["itemId"] == item_id
+            inventory_data["itemTable"]["valueList"][index]["count"] += count
         else:
             raise ValueError(f"Item: {item_id} already in inventory!")
 
     # newType: 0=unknown, 1=discovery, 2=get, 3=confirm
     inventory_data["itemTable"]["keyList"].append(item_id)
     inventory_data["itemTable"]["valueList"].append(
-        {"count": 8, "itemId": item_id, "newType": 2})
+        {"count": count, "itemId": item_id, "newType": 2})
 
 def quicktest(record):
     save_dict = extract_record(record)
@@ -62,7 +68,7 @@ def quicktest(record):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpFormatter(prog, width=100))
     parser.add_argument("root_json_path", type=str)
     parser.add_argument(
         "--add-money", nargs="?", type=int, const=1_000_000, metavar="AMOUNT",
@@ -83,7 +89,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--add-battle-items", action="store_true",
-        help="Add 60 to owned battle items (if less than 60)."
+        help="Add 100 to owned battle items."
     )
     parser.add_argument(
         "--add-accessories", action="store_true",
@@ -96,6 +102,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--insert-all-armors", action="store_true",
         help="Add 8 copies of every armor known in data/known_item_ids.json."
+    )
+    parser.add_argument(
+        "--insert-all-accessories", action="store_true",
+        help=("Add 8 copies of every accessory known in data/known_item_ids.json."
+            "  To not interfere with plot, Divine Artifacts are skipped.")
+    )
+    parser.add_argument(
+        "--insert-or-add-sp-capsules", action="store_true",
+        help="Insert or add 9999 SP Capsules."
     )
     parser.add_argument(
         "--insert-items", metavar="ITEM_ID", type=str, nargs="*", default=[],
@@ -168,9 +183,8 @@ if __name__ == "__main__":
                     and value["count"] < 100):
                 value["count"] += 100
 
-            if (args.add_battle_items and value["itemId"].startswith("Item_Battle_")
-                    and value["count"] < 60):
-                value["count"] += 60
+            if (args.add_battle_items and value["itemId"].startswith("Item_Battle_")):
+                value["count"] += 100
 
             if (args.add_accessories and value["itemId"].startswith("Acce_")
                     and value["count"] < 8):
@@ -186,6 +200,14 @@ if __name__ == "__main__":
             for item_id in KNOWN_ITEM_IDS:
                 if item_id.startswith("ArmorM_") or item_id.startswith("ArmorS_"):
                     insert_item(inventory_data, item_id, skip_existing=True)
+
+        if args.insert_all_accessories:
+            for item_id in KNOWN_ITEM_IDS:
+                if item_id.startswith("Acce_") and not item_id.startswith("Acce_God"):
+                    insert_item(inventory_data, item_id, skip_existing=True)
+
+        if args.insert_or_add_sp_capsules:
+            insert_item(inventory_data, "Item_SpAdd_Capsule", add_to_existing=True, count=9999)
 
         for item_id in args.insert_items:
             insert_item(inventory_data, item_id)
