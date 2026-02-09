@@ -67,11 +67,31 @@ def quicktest(record):
     assert encryped_str == record["encryptedString"]
     print("Quick Test passed!")
 
+def find_latest_save_slot(records):
+    """Find the save slot with the longest playtime."""
+    records = [records[0]] + records[2:]  # records[1] is the quicksave slot
+
+    max_playtime = 0
+    max_idx = 0
+    for i, record in enumerate(records):
+        save_dict = extract_record(record)
+        playtime = json.loads(save_dict["GameSystemInfo"])["_playTimeSec"]
+        if playtime > max_playtime:
+            max_playtime = playtime
+            max_idx = i
+
+    return max_idx
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=lambda prog: argparse.HelpFormatter(prog, width=100))
     parser.add_argument("root_json_path", type=str)
+    parser.add_argument(
+        "--save-slot-number", type=int, default=-1,
+        help=("Specify the save slot number to edit.  If set to -1, the save with the "
+              "longest playtime will be edited."))
     parser.add_argument(
         "--add-money", nargs="?", type=int, const=1_000_000, metavar="AMOUNT",
         help="Add specified amount of money (default: 1,000,000).")
@@ -119,6 +139,10 @@ if __name__ == "__main__":
         help=("Insert all items that unlock growth map gates (will skip existing ones).")
     )
     parser.add_argument(
+        "--insert-all-upgrade-materials", action="store_true",
+        help="Insert 24 of each weapon/armor upgrade materials."
+    )
+    parser.add_argument(
         "--insert-items", metavar="ITEM_ID", type=str, nargs="*", default=[],
         help=("Insert NEW items in quantities of 8. "
               "To avoid game crashing, the program will error if you try to "
@@ -133,11 +157,19 @@ if __name__ == "__main__":
 
     root = json.load(open(root_json_path))
     records = json.loads(root["dataString"])["records"]
-    record = records[-1]
+    print(f"Retrieved {len(records)-1} save slots and 1 quicksave.")
+    if args.save_slot_number == -1:
+        save_slot = find_latest_save_slot(records)
+        print(f"Found latest save slot: {save_slot+1}")
+    else:
+        save_slot = args.save_slot_number
+
+    record_idx = 0 if save_slot == 0 else save_slot + 1  # records[1] is the quicksave
+    record = records[record_idx]
+    save_dict = extract_record(record)
+    print(f"Editing save slot {save_slot+1} (saved on date: {save_dict['Date']})")
 
     quicktest(record)
-
-    save_dict = extract_record(record)
 
     if args.add_money:
         game_system_info = json.loads(save_dict["GameSystemInfo"])
@@ -216,6 +248,15 @@ if __name__ == "__main__":
             for item_id in KNOWN_ITEM_IDS:
                 if item_id.startswith("Item_Gate_"):
                     insert_item(inventory_data, item_id, skip_existing=True, count=1)
+
+        if args.insert_all_upgrade_materials:
+            for item_id in KNOWN_ITEM_IDS:
+                if item_id.startswith("Item_Material_"):
+                    count = {
+                        "Item_Material_Ex01": 31,
+                        "Item_Material_Ex02": 32,
+                    }.get(item_id, 24)
+                    insert_item(inventory_data, item_id, add_to_existing=True, count=count)
 
         if args.insert_or_add_sp_capsules:
             insert_item(inventory_data, "Item_SpAdd_Capsule", add_to_existing=True, count=9999)
