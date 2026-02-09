@@ -45,6 +45,7 @@ def insert_item(
         raise ValueError(f"unknown item id: {item_id}")
     if item_id.startswith("Item_Key_") or item_id.startswith("Item_Quest_"):
         raise ValueError(f"Cannot insert key/quest item: {item_id}")
+
     if item_id in inventory_data["itemTable"]["keyList"]:
         if skip_existing:
             return
@@ -112,6 +113,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--insert-or-add-sp-capsules", action="store_true",
         help="Insert or add 9999 SP Capsules."
+    )
+    parser.add_argument(
+        "--insert-all-gate-items", action="store_true",
+        help=("Insert all items that unlock growth map gates (will skip existing ones).")
     )
     parser.add_argument(
         "--insert-items", metavar="ITEM_ID", type=str, nargs="*", default=[],
@@ -206,6 +211,11 @@ if __name__ == "__main__":
             for item_id in KNOWN_ITEM_IDS:
                 if item_id.startswith("Acce_") and not item_id.startswith("Acce_God"):
                     insert_item(inventory_data, item_id, skip_existing=True)
+
+        if args.insert_all_gate_items:
+            for item_id in KNOWN_ITEM_IDS:
+                if item_id.startswith("Item_Gate_"):
+                    insert_item(inventory_data, item_id, skip_existing=True, count=1)
 
         if args.insert_or_add_sp_capsules:
             insert_item(inventory_data, "Item_SpAdd_Capsule", add_to_existing=True, count=9999)
