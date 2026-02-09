@@ -89,7 +89,7 @@ if __name__ == "__main__":
         formatter_class=lambda prog: argparse.HelpFormatter(prog, width=100))
     parser.add_argument("root_json_path", type=str)
     parser.add_argument(
-        "--save-slot-number", type=int, default=-1,
+        "--save-slot-number", type=int, default=-1, metavar="NUM",
         help=("Specify the save slot number to edit.  If set to -1, the save with the "
               "longest playtime will be edited."))
     parser.add_argument(
