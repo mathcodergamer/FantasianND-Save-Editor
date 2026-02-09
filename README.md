@@ -57,7 +57,8 @@ $ python fantasia.py --help
 usage: fantasia.py [-h] [--add-money [AMOUNT]] [--print-save] [--analyze-all] [--add-box-keys]
                    [--add-recovery-items] [--add-battle-items] [--add-accessories]
                    [--insert-all-weapons] [--insert-all-armors] [--insert-all-accessories]
-                   [--insert-or-add-sp-capsules] [--insert-items [ITEM_ID ...]]
+                   [--insert-or-add-sp-capsules] [--insert-all-gate-items]
+                   [--insert-items [ITEM_ID ...]]
                    root_json_path
 
 positional arguments:
@@ -80,6 +81,8 @@ options:
                         interfere with plot, Divine Artifacts are skipped.
   --insert-or-add-sp-capsules
                         Insert or add 9999 SP Capsules.
+  --insert-all-gate-items
+                        Insert all items that unlock growth map gates (will skip existing ones).
   --insert-items [ITEM_ID ...]
                         Insert NEW items in quantities of 8. To avoid game crashing, the program
                         will error if you try to insert existing, unknown or key/quest items. Look
