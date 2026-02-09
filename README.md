@@ -47,7 +47,7 @@ python fantasia.py root_0208_0823.json \
     --add-money --analyze-all --add-box-keys \
     --add-recovery-items --add-battle-items --add-accessories \
     --insert-all-weapons --insert-all-armors \
-    --isnert-all-accessories --insert-or-add-sp-capsules
+    --insert-all-accessories --insert-or-add-sp-capsules
 ```
 
 Below is full description of the usage as output by the program.
