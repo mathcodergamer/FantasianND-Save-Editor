@@ -68,7 +68,8 @@ def quicktest(record):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpFormatter(prog, width=100))
+    parser = argparse.ArgumentParser(
+        formatter_class=lambda prog: argparse.HelpFormatter(prog, width=100))
     parser.add_argument("root_json_path", type=str)
     parser.add_argument(
         "--add-money", nargs="?", type=int, const=1_000_000, metavar="AMOUNT",
@@ -114,9 +115,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--insert-items", metavar="ITEM_ID", type=str, nargs="*", default=[],
-        help=("Insert NEW items in quantities of 8."
+        help=("Insert NEW items in quantities of 8. "
               "To avoid game crashing, the program will error if you try to "
-              "insert existing, unknown or key/quest items.  Look at" \
+              "insert existing, unknown or key/quest items.  Look at "
               "data/known_item_ids.json for a list of known items in the game.")
     )
 
