@@ -3,7 +3,7 @@
 ## !!!READ FIRST!!!
 
 I am not responsible for corrupting your save if you use it irresponsibly.
-Reasonable guardrails are built-in to prevent you from ruining your save, but it is up to you to make sure YOUR SAVE IS BACKED UP before any editing takes place.
+Reasonable guardrails are built-in to prevent you from ruining your save, but it is up to you to make sure __YOUR SAVE IS BACKED UP__ before any editing takes place.
 
 ## Requirements
 
