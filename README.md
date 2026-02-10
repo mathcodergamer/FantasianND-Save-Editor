@@ -41,15 +41,29 @@ By default, the save slot with the longest playtime will be edited.  You can spe
 
 **Note** that I compiled a list of known items in [data/known_item_ids.json](data/known_item_ids.json) extracted from saves of mine and online players, and this might be incomplete.  The list of weapons, accessories and armor above uses this list uses this file.  Open an issue or pull request if you know of any missing ones.  Alternatively, attach your save in a GitHub issue and I have script to extract item ids and merge it with my list.
 
-__NOTICE__ The command below is identical to the one above, except __it also adds 9999 SP capsules__ to your game.  __DO NOT USE THIS IF YOU HAVEN'T UNLOCKED SKILL POINTS!__
-I do know the consequence of using it earlier than that and I am not responsible for the any game breaking that might be the result of it.
+### Quickstart (Part 2)
+
+__DO NOT USE THIS IF YOU HAVEN'T UNLOCKED PART 2!__
+
+__NOTICE__ The command below is identical to the one above, except __it also adds Part 2 items__ to your game, including 9999x SP Capsules, all growth map gate items, 24 of each upgrade materials.
+__DO NOT USE THIS__ unless you have unlocked skill points or started act 2.
+I do know the consequence of using it earlier than that and I am not responsible for any game breaking as a result of it.
 
 ```bash
 python fantasia.py root_0208_0823.json \
     --add-money --analyze-all --add-box-keys \
     --add-recovery-items --add-battle-items --add-accessories \
     --insert-all-weapons --insert-all-armors \
-    --insert-all-accessories --insert-or-add-sp-capsules
+    --insert-all-accessories --insert-or-add-sp-capsules \
+    --insert-all-gate-items --insert-all-upgrade-materials
+```
+
+### Remove Unsellable Weapons
+
+If you just want to remove unsellable weapons (likely in NG+), you can use the below.  Subsitute `root_copy.json` with your save file path.
+
+```bash
+python fantasia.py root_copy.json --remove-extra-unsellable-weapons
 ```
 
 ### Full Usage
@@ -63,7 +77,7 @@ usage: fantasia.py [-h] [--save-slot-number NUM] [--add-money [AMOUNT]] [--print
                    [--add-accessories] [--insert-all-weapons] [--insert-all-armors]
                    [--insert-all-accessories] [--insert-or-add-sp-capsules]
                    [--insert-all-gate-items] [--insert-all-upgrade-materials]
-                   [--insert-items [ITEM_ID ...]]
+                   [--remove-extra-unsellable-weapons] [--insert-items [ITEM_ID ...]]
                    root_json_path
 
 positional arguments:
@@ -93,6 +107,8 @@ options:
                         Insert all items that unlock growth map gates (will skip existing ones).
   --insert-all-upgrade-materials
                         Insert 24 of each weapon/armor upgrade materials.
+  --remove-extra-unsellable-weapons
+                        Remove extra unsellable (ultimate) weapons but keep the ones you equipped.
   --insert-items [ITEM_ID ...]
                         Insert NEW items in quantities of 8. To avoid game crashing, the program
                         will error if you try to insert existing, unknown or key/quest items. Look
