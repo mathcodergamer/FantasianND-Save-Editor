@@ -47,11 +47,18 @@ def insert_item(
         raise ValueError(f"Cannot insert key/quest item: {item_id}")
 
     if item_id in inventory_data["itemTable"]["keyList"]:
+        index = inventory_data["itemTable"]["keyList"].index(item_id)
+        assert inventory_data["itemTable"]["valueList"][index]["itemId"] == item_id
+        curr_count = inventory_data["itemTable"]["valueList"][index]["count"]
+
         if skip_existing:
-            return
+            if curr_count == 0:
+                # item doesn't actually exist -- still add amount
+                inventory_data["itemTable"]["valueList"][index]["count"] += count
+            else:
+                # item already existed (>1 quantity), skip
+                return
         elif add_to_existing:
-            index = inventory_data["itemTable"]["keyList"].index(item_id)
-            assert inventory_data["itemTable"]["valueList"][index]["itemId"] == item_id
             inventory_data["itemTable"]["valueList"][index]["count"] += count
         else:
             raise ValueError(f"Item: {item_id} already in inventory!")
@@ -143,6 +150,10 @@ if __name__ == "__main__":
         help="Insert 24 of each weapon/armor upgrade materials."
     )
     parser.add_argument(
+        "--remove-extra-unsellable-weapons", action="store_true",
+        help="Remove extra unsellable (ultimate) weapons but keep the ones you equipped."
+    )
+    parser.add_argument(
         "--insert-items", metavar="ITEM_ID", type=str, nargs="*", default=[],
         help=("Insert NEW items in quantities of 8. "
               "To avoid game crashing, the program will error if you try to "
@@ -203,11 +214,14 @@ if __name__ == "__main__":
         args.add_accessories or
         args.insert_all_weapons or
         args.insert_all_armors or
+        args.remove_extra_unsellable_weapons or
         args.insert_items
     )
     if edit_inventory:
         edited = True
         inventory_data = json.loads(save_dict["Inventory"])
+        player_status = json.loads(save_dict["PlayerStatus"])
+        equipped_weapons = [p["_weapon"] for p in player_status["_items"]]
 
         # process all amount increments
         for value in inventory_data["itemTable"]["valueList"]:
@@ -227,6 +241,10 @@ if __name__ == "__main__":
             if (args.add_accessories and value["itemId"].startswith("Acce_")
                     and value["count"] < 8):
                 value["count"] += 8
+
+            if (args.remove_extra_unsellable_weapons and
+                    value["itemId"].startswith("Wp") and "_OW_EhUlt_" in value["itemId"]):
+                value["count"] = 1 if value["itemId"] in equipped_weapons else 0
 
         # process new item insertions
         if args.insert_all_weapons:
