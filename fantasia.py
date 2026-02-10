@@ -270,11 +270,7 @@ if __name__ == "__main__":
         if args.insert_all_upgrade_materials:
             for item_id in KNOWN_ITEM_IDS:
                 if item_id.startswith("Item_Material_"):
-                    count = {
-                        "Item_Material_Ex01": 31,
-                        "Item_Material_Ex02": 32,
-                    }.get(item_id, 24)
-                    insert_item(inventory_data, item_id, add_to_existing=True, count=count)
+                    insert_item(inventory_data, item_id, add_to_existing=True, count=24)
 
         if args.insert_or_add_sp_capsules:
             insert_item(inventory_data, "Item_SpAdd_Capsule", add_to_existing=True, count=9999)
