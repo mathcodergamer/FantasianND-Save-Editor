@@ -191,6 +191,7 @@ if __name__ == "__main__":
     quicktest(record)
 
     if args.add_money:
+        print(f"adding {args.add_money} money")
         game_system_info = json.loads(save_dict["GameSystemInfo"])
         game_system_info["_money"] += args.add_money
         game_system_info_str = json.dumps(game_system_info, separators=(",", ":"))
@@ -353,7 +354,7 @@ if __name__ == "__main__":
         print("Finished editing.")
         encrypted_str = encrypt_save_dict(save_dict)
 
-        records[-1]["encryptedString"] = encrypted_str
+        records[record_idx]["encryptedString"] = encrypted_str
         new_data_str = json.dumps({"records": records}, separators=(",", ":"))
         root["dataString"] = new_data_str
         edited_save_path = "edited_" + os.path.basename(root_json_path)
