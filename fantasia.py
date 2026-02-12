@@ -154,6 +154,14 @@ if __name__ == "__main__":
         help="Remove extra unsellable (ultimate) weapons but keep the ones you equipped."
     )
     parser.add_argument(
+        "--add-exp-mult", nargs="?", type=float, const=4, metavar="MULT",
+        help="Add MULT x Leo's current Exp to all your party members."
+    )
+    parser.add_argument(
+        "--add-sp-points", nargs="?", type=int, const=400, metavar="POINTS",
+        help="Directly add amount of SP points to every character."
+    )
+    parser.add_argument(
         "--insert-items", metavar="ITEM_ID", type=str, nargs="*", default=[],
         help=("Insert NEW items in quantities of 8. "
               "To avoid game crashing, the program will error if you try to "
@@ -280,6 +288,55 @@ if __name__ == "__main__":
 
         inventory_data_str = json.dumps(inventory_data, separators=(",", ":"))
         save_dict["Inventory"] = inventory_data_str
+
+    edit_player_status = (
+        args.add_exp_mult or
+        args.add_sp_points
+    )
+    if edit_player_status:
+        edited = True
+
+        player_status = json.loads(save_dict["PlayerStatus"])
+        player_party = json.loads(save_dict["PlayerParty"])
+
+        if args.add_exp_mult:
+
+            # sanity check: players should be ordered by id
+            # PC001: Leo, PC002: Kina, PC003: Cheryl, PC004: Zinikr
+            # PC005: Tan, PC006: Prickle, PC007: Valrika, PC008: EZ
+            for player_id, player in enumerate(player_status["_items"]):
+                assert player["_characterId"] == f"PC00{player_id+1}"
+
+            available_unit_ids = [u["characterId"] for u in player_party["_units"]]
+
+            # At Lv. 50, add 4x gives lv. 74, 6x gives lv. 91, 7x gives lv.98.
+            # Exp curve is probably exponential, hence adding multiples of Leo's curr exp.
+            curr_leo_exp = player_status["_items"][0]["_exp"]
+            for player in player_status["_items"]:
+                if player["_characterId"] in available_unit_ids:
+                    player["_exp"] += curr_leo_exp * int(args.add_exp_mult)
+
+        if args.add_sp_points:
+            for player in player_status["_items"]:
+                player["_growthPoint"] += 400
+
+        player_status_str = json.dumps(player_status, separators=(",", ":"))
+        save_dict["PlayerStatus"] = player_status_str
+
+    # # Code below was an attempt to unlock 2nd growth map without NG+.
+    # # unfortunately it didn't work...
+    # unlock_2nd_growth = True
+    # if unlock_2nd_growth:
+    #     edited = True
+
+    #     flag_manager = json.loads(save_dict["FlagManager"])
+
+    #     for i in range(1, 9):
+    #         flag_manager["_globalFlags"]["flagList"]["keyList"].append("Growth2nd_PC001")
+    #         flag_manager["_globalFlags"]["flagList"]["valueList"].append(1)
+
+    #     flag_manager_str = json.dumps(flag_manager, separators=(",", ":"))
+    #     save_dict["FlagManager"] = flag_manager_str
 
     if args.print_save:
         for k, v in save_dict.items():
