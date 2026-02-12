@@ -5,6 +5,8 @@
 I am not responsible for corrupting your save if you use it irresponsibly.
 Reasonable guardrails are built-in to prevent you from ruining your save, but it is up to you to make sure __YOUR SAVE IS BACKED UP__ before any editing takes place.
 
+However, if you run into any issue, don't be afraid to submit an issue.  I will do my best to help.
+
 ## Requirements
 
 `git clone` this repository and install dependency `pycryptodome`, which is necessary for decrypting and re-encrypting save files.  Install with:
