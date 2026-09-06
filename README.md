@@ -25,6 +25,47 @@ cp "/home/deck/.local/share/Steam/steamapps/compatdata/2844850/pfx/drive_c/users
 
 Note that I timestamp my save files so I can rollback to a known working version if editing corrupted my save file.
 
+## Importing an Apple Arcade FANTASIAN save (`aa_to_steam.py`)
+
+The original Apple Arcade release and Neo Dimension use the **same** save payload — the
+same 12 keys (`PlayerParty`, `PlayerStatus`, `FlagManager`, `GameSystemInfo`, `Inventory`,
+`BattleData`, `DimensionManager`, `ScenarioInfoData`, `QuestData`, `AchievementCountData`,
+`Version`, `Date`) and the same inner field names.  Only the container differs:
+
+| | Apple Arcade | Steam (Neo Dimension) |
+|---|---|---|
+| location | `SaveDataEntity.sqlite` → `ZGAMEDATAENTITY.ZDATA` (zlib) | `.../Steam/<steamid>/_data/root.json` |
+| shape | `{"records":[{"path","dataString"}]}` | `{"dataString":"{\"records\":[{\"path\",\"encryptedString\"}]}"}` |
+| record body | plaintext JSON | AES-128-CBC + base64 (same key as above) |
+
+`aa_to_steam.py` does that conversion.  Grab the app's `FANTASIAN` save folder off your
+Apple device (the one holding `SaveDataEntity.sqlite`) and zip it, then point the script
+straight at that zip — it pulls the sqlite out along with its `-wal`/`-shm` sidecars so the
+newest data is picked up rather than a stale checkpoint.  A bare `.sqlite`, a
+`ZGAMEDATAENTITY` table dump, or an already-decompressed `root.json` work too:
+
+```bash
+python aa_to_steam.py FANTASIAN.zip --list          # see what slots are in there
+python aa_to_steam.py FANTASIAN.zip -o root.json    # convert them all
+```
+
+`GameData0` is manual slot 1, `GameData10` is the autosave, `GameData1`/`GameData2` are
+manual slots 2 and 3.  Import a subset with `--slots 0 10`.
+
+If you already have Steam saves you want to keep, merge instead of replacing — this keeps
+every slot the source doesn't cover and reuses the exact file layout the game wrote:
+
+```bash
+python aa_to_steam.py FANTASIAN.zip --auto-template -o root.json
+```
+
+Then close the game and copy the result over `_data/root.json`.
+
+**Caveats.** This has been confirmed working on one mid-Part-1 save (~17h, `CityVibra`),
+but Neo Dimension is a remaster: the schema matches, yet content IDs are not *guaranteed*
+identical across every map, flag and item.  Back up your Steam save first, and load the
+imported slot in-game before trusting it.
+
 ## Usage
 
 ### Quickstart
